@@ -33,6 +33,10 @@ Middleware extracts authorization information from the request, calls oauth serv
 
 Package provides exception that replies according to rfc6750. You may throw this exception from the controller if `access_token` has insufficient scope.
 
+### Request Builder
+
+Helps to build requests with authorization information.
+
 ### ResourceServer Facade
 
 Helps to issue, store and refresh tokens.
