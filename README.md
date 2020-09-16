@@ -25,15 +25,11 @@ Your OAuth server must implement rfc7662 (token introspection endpoint).
 
 ### API Middleware
 
-Middleware extracts authorization information from the request, calls oauth server to introspect token and then merge scope information into the request, passing it down to the controller.
+Middleware extracts authorization information from the request, calls oauth server to introspect token and then check token activity and it scopes.
 
 ### Exceptions
 
-Package provides exception that replies according to rfc6750. You may throw this exception from the controller if `access_token` has insufficient scope.
-
-### Request Builder
-
-Helps to build requests with authorization information.
+Package provides exceptions that responds according to rfc6750. In normal case all exceptions are thrown from the middleware.
 
 ### ResourceServer Facade
 
@@ -61,7 +57,7 @@ SCOPE=read write
 
 ## Middleware
 
-Register `ResourceServerMiddleware` with alias you like and protect api routes you want.
+Register `ResourceServerMiddleware` with alias you like and protect api routes you need.
 
 You may protect exact route with middleware, defining required scope.
 
