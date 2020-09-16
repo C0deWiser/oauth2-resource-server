@@ -35,6 +35,45 @@ Package provides exceptions that responds according to rfc6750. In normal case a
 
 Helps to issue, store and refresh tokens.
 
+## Installation
+
+```
+composer require codewiser/oauth2-resource-server
+```
+
+Add the package to your application service providers and aliases in `config/app.php` file.
+
+```php
+'providers' => [
+    Codewiser\ResourceServer\Providers\ResourceServerServiceProvider::class,
+],
+'aliases' => [
+    'ResourceServer' => Codewiser\ResourceServer\Facades\ResourceServer::class,
+],
+```
+
+Publish package config.
+
+```
+php artisan vendor:publish --provider="Codewiser\ResourceServer\Providers\ResourceServerServiceProvider"
+```
+
+Register middleware in `app/Http/Kernel.php` file.
+
+```php
+protected $middlewareGroups = [
+   'api' => [
+       \Codewiser\ResourceServer\Http\Middleware\ResourceServerMiddleware::class,
+   ],
+];
+```
+or
+```php
+protected $routeMiddleware = [
+    'scope' => \Codewiser\ResourceServer\Http\Middleware\ResourceServerMiddleware::class,
+];
+``` 
+
 ## Setup
 
 Environment requires all standard OAuth client properties.
@@ -56,8 +95,6 @@ SCOPE=read write
 `SCOPE` is for default scopes for requested access tokens.
 
 ## Middleware
-
-Register `ResourceServerMiddleware` with alias you like and protect api routes you need.
 
 You may protect exact route with middleware, defining required scope.
 
@@ -92,11 +129,3 @@ $accessToken = ResourceServer::getAccessToken();
 Package requests token from oauth server and stores it in the cache for all token lifetime. Use token to make requests to neighbor resource servers. 
 
 Token may be sent as `Athorization` header (https://tools.ietf.org/html/rfc6750#section-2.1), as `access_token` body parameter (https://tools.ietf.org/html/rfc6750#section-2.2) or as `access_token` query parameter (https://tools.ietf.org/html/rfc6750#section-2.3).
-
-To introspect any incoming token:
-
-```php
-$introspectedToken = ResourceServer::getIntrospectedToken($token);
-```
-
-Information about introspected token stored in cache for one day. So oauth server will not be overhitted.

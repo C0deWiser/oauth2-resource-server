@@ -1,0 +1,22 @@
+{
+    "name": "codewiser/oauth2-resource-server",
+    "description": "OAuth 2.0 Resource Server",
+    "type": "library",
+    "license": "MIT",
+    "version": "0.1",
+    "authors": [
+        {
+            "name": "pm",
+            "email": "pm@101media.ru"
+        }
+    ],
+    "require": {
+        "league/oauth2-client": "^2.0",
+        "laravel/framework": ">=6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Codewiser\\ResourceServer\\": "src"
+        }
+    }
+}
