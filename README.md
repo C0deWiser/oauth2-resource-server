@@ -23,7 +23,7 @@ Your OAuth server must implement rfc7662 (token introspection endpoint).
 
 ## Package contents
 
-The package based on league/oauth2-client and league/oauth2-server as it combines roles of oauth-client and resource-server.
+The package based on league/oauth2-client
 
 ### API Middleware
 
@@ -40,3 +40,70 @@ Helps to build requests with authorization information.
 ### ResourceServer Facade
 
 Helps to issue, store and refresh tokens.
+
+## Setup
+
+Environment requires all standard OAuth client properties.
+
+```env
+OAUTH_SERVER=https://example.com
+CLIENT_ID=123
+CLIENT_SECRET=***
+REDIRECT_URI=http://localhost/oauth/callback
+AUTHORIZE_ENDPOINT=oauth/authorize
+TOKEN_ENDPOINT=oauth/token
+RESOURCE_OWNER_ENDPOINT=api/user
+INTROSPECTION_ENDPOINT=oauth/token/info
+SCOPE=read write
+```
+
+`REDIRECT_URI` is not required by package, but league/oauth2-client need it.
+`SCOPE` is for default scopes for requested access tokens.
+
+## Middleware
+
+Register `ResourceServerMiddleware` with alias you like and protect api routes you want.
+
+You may protect exact route with middleware, defining required scope.
+
+```php
+Route::get('resource', 'ApiController@list')->middleware('scope:read')
+```
+
+Otherwise you may protect group of routes with middleware and validate scope in controllers.
+
+```php
+class ApiController extends Controller
+{
+  public function list(Request $request)
+  {
+    ResourceServer::introspect($request)->validateScope('read');
+    
+    // Your code here
+  }
+}
+```
+
+## ResourceServer Facade
+
+Facade manages access_token of your server and provides methods to instrospect external tokens.
+
+```php
+$accessToken = ResourceServer::getAccessToken();
+```
+
+Access token of your application is stored in cache for all lifetime. Use it to make requests to neighbor resource servers. 
+
+```php
+$authorizedRequestHeaders = [
+  'Authorization' => ResourceServer::getAuthorizationHeader()
+];
+```
+
+To introspect any token:
+
+```php
+$introspectedToken = ResourceServer::getIntrospectedToken($token);
+```
+
+Information about introspected token stored in cache for one day. So oauth server will not be overhitted.
