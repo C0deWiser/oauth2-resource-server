@@ -2,7 +2,7 @@
     "name": "codewiser/oauth2-resource-server",
     "description": "OAuth 2.0 Resource Server",
     "type": "library",
-    "keywords": ["OAuth 2.0", "OAuth client", "Resource server", "RFC 7662", "RFC 6750"],
+    "keywords": ["OAuth 2.0", "OAuth client", "Resource server", "RFC 7662", "RFC 6750", "Laravel"],
     "license": "MIT",
     "version": "0.2",
     "authors": [
@@ -33,5 +33,8 @@
                 "OAuthClient": "Codewiser\\ResourceServer\\Facades\\OAuthClient"
             }
         }
+    },
+    "suggest": {
+        "ipunkt/laravel-oauth-introspection": "Brings RFC 7662 to your Laravel Passport"
     }
 }
