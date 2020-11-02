@@ -92,19 +92,19 @@ class OAuthClientService extends AbstractService
      */
     public function callback(Request $request)
     {
+        if ($request->has('error')) {
+            throw new OauthResponseException(
+                $request->get('error'),
+                $request->get('error_description'),
+                $request->get('error_uri')
+            );
+        }
+
         if ($request->has('state')) {
 
             if (!$this->context->restoreContext($request->get('state'))) {
                 // Fake
                 exit('Invalid state');
-            }
-
-            if ($request->has('error')) {
-                throw new OauthResponseException(
-                    $request->get('error'),
-                    $request->get('error_description'),
-                    $request->get('error_uri')
-                );
             }
 
             if ($this->context->response_type == 'code' && $request->has('code')) {
