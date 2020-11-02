@@ -3,115 +3,62 @@
 
 namespace Codewiser\ResourceServer\Services;
 
+use Codewiser\ResourceServer\Exceptions\OauthResponseException;
 use Codewiser\ResourceServer\Exceptions\RFC6750\BearerTokenException;
 use Codewiser\ResourceServer\Exceptions\RFC6750\InvalidRequestException;
 use Codewiser\ResourceServer\Exceptions\RFC6750\InvalidTokenException;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessTokenInterface;
 
-class ResourceServerService
+class ResourceServerService extends AbstractService
 {
     /**
      * @var ProviderWithRfc7662
      */
     protected $provider;
 
-    public function __construct()
+    public function __construct($client_id, $client_secret, $default_scope, $url_authorize, $url_grant, $url_resource_owner, $url_introspect)
     {
-        $options = [
-            'clientId' => config('resource_server.client_id'),
-            'clientSecret' => config('resource_server.client_secret'),
-            'redirectUri' => config('resource_server.redirect_uri'),
-            'urlAuthorize' => $this->getUrlAuthorize(),
-            'urlAccessToken' => $this->getUrlAccessToken(),
-            'urlResourceOwnerDetails' => $this->getUrlResourceOwnerDetails(),
-            'urlIntrospectToken' => $this->getUrlTokenIntrospection()
+        parent::__construct($client_id, $client_secret, $default_scope, $url_authorize, $url_grant, $url_resource_owner);
+
+        $options = $this->provider_options + [
+            'urlIntrospectToken' => $url_introspect
         ];
-        
+
         $this->provider = new ProviderWithRfc7662($options);
     }
 
     /**
-     * OAuth user authorization URL.
+     * Get Client Credentials Access Token.
      *
-     * @return string
-     */
-    public function getUrlAuthorize()
-    {
-        return $this->getUrl(config('resource_server.authorize_endpoint'));
-    }
-
-    /**
-     * OAuth grant token URL.
-     *
-     * @return string
-     */
-    public function getUrlAccessToken()
-    {
-        return $this->getUrl(config('resource_server.token_endpoint'));
-    }
-
-    /**
-     * OAuth token owner info URL.
-     *
-     * @return string
-     */
-    public function getUrlResourceOwnerDetails()
-    {
-        return $this->getUrl(config('resource_server.resource_owner_endpoint'));
-    }
-
-    /**
-     * OAuth token introspection URL.
-     *
-     * @return string
-     */
-    public function getUrlTokenIntrospection()
-    {
-        return $this->getUrl(config('resource_server.introspection_endpoint'));
-    }
-
-    protected function getUrl($endpoint)
-    {
-        $server = config('resource_server.oauth_server');
-        if ($server && $endpoint) {
-            return $server . '/' . $endpoint;
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     *
-     * @param string $scope
      * @return AccessTokenInterface
      * @throws IdentityProviderException
      */
-    public function getAccessToken($scope = '')
+    public function getAccessToken()
     {
-        $scope = $scope ?: $this->getDefaultScope();
+        $options = array_merge(
+            ['scope' => $this->getDefaultScope()],
+            (array)$this->options
+        );
 
-        return $this->getCachedAccessToken($scope) ?:
+        return $this->getCachedAccessToken($options['scope']) ?:
             $this->cacheAccessToken(
-                $scope,
-                $this->provider->getAccessToken('client_credentials', ['scope' => $scope])
+                $options['scope'],
+                $this->provider->getAccessToken('client_credentials', $options)
             );
     }
 
-    protected function getDefaultScope()
-    {
-        return config('resource_server.scopes');
-    }
-
     /**
-     * @param $scope
+     * @param string $scope
      * @param string $key
      * @return AccessTokenInterface|null
      */
-    protected function getCachedAccessToken($scope, $key = 'client_credentials_access_token')
+    protected function getCachedAccessToken($scope, $key = 'client_access_token')
     {
         $key = $key . md5($scope);
 
@@ -131,12 +78,19 @@ class ResourceServerService
      * @param string $key
      * @return AccessTokenInterface
      */
-    protected function cacheAccessToken($scope, AccessTokenInterface $accessToken, $key = 'client_credentials_access_token')
+    protected function cacheAccessToken($scope, AccessTokenInterface $accessToken, $key = 'client_access_token')
     {
         $key = $key . md5($scope);
 
         Cache::put($key, serialize($accessToken), Carbon::createFromTimestamp($accessToken->getExpires()));
         return $accessToken;
+    }
+
+    public function forgetAccessToken($scope, $key = 'client_access_token')
+    {
+        $key = $key . md5($scope);
+
+        Cache::forget($key);
     }
 
     /**
@@ -170,11 +124,15 @@ class ResourceServerService
     }
 
     /**
-     * @param string $token
-     * @return IntrospectedToken|null
+     * @param string|AccessTokenInterface $token
+     * @return IntrospectedToken
+     * @throws IdentityProviderException
      */
-    protected function getIntrospectedToken($token)
+    public function getIntrospectedToken($token)
     {
+        if ($token instanceof AccessTokenInterface) {
+            $token = $token->getToken();
+        }
 
         try {
             return $this->getCachedTokenIntrospection($token) ?:
@@ -182,7 +140,8 @@ class ResourceServerService
                     $token, $this->provider->getIntrospectedToken($token, $this->getAccessToken())
                 );
         } catch (IdentityProviderException $e) {
-            return null;
+            $this->forgetAccessToken($this->getDefaultScope());
+            throw $e;
         }
     }
 
@@ -193,7 +152,7 @@ class ResourceServerService
      * @return IntrospectedToken
      * @throws BearerTokenException
      */
-    public function validate(Request $request)
+    public function validateRequest(Request $request)
     {
         $info = $this->introspect($request);
 
@@ -211,11 +170,10 @@ class ResourceServerService
      */
     public function introspect(Request $request)
     {
-        if ($request->hasHeader('authorization')) {
-            $header = $request->header('authorization');
-            $token = \trim((string)\preg_replace('/^(?:\s+)?Bearer\s/', '', $header));
-        } elseif ($request->has('access_token')) {
-            $token = $request->get('access_token');
+        if ($token = $request->bearerToken()) {
+
+        } elseif ($token = $request->get('access_token')) {
+
         } else {
             throw new InvalidRequestException('Missing authorization information. See https://tools.ietf.org/html/rfc6750#section-2');
         }

@@ -5,17 +5,21 @@ namespace Codewiser\ResourceServer\Facades;
 
 
 use Codewiser\ResourceServer\Services\IntrospectedToken;
+use Codewiser\ResourceServer\Services\ResourceServerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Facade;
+use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use League\OAuth2\Client\Token\AccessTokenInterface;
 
 /**
  * Class ResourceServer
  * @package Codewiser\ResourceServer\Facades
  *
- * @method static IntrospectedToken validate(Request $request)
- * @method static IntrospectedToken introspect(Request $request)
- * @method static AccessTokenInterface getAccessToken(string $scope = null)
+ * @method static IntrospectedToken validateRequest(Request $request)
+ * @method static AccessTokenInterface getAccessToken()
+ * @method static forgetAccessToken()
+ * @method static IntrospectedToken getIntrospectedToken(AccessTokenInterface $token)
+ * @method static ResourceServerService setScope(string $scope)
  */
 class ResourceServer extends Facade
 {

@@ -2,8 +2,9 @@
     "name": "codewiser/oauth2-resource-server",
     "description": "OAuth 2.0 Resource Server",
     "type": "library",
+    "keywords": ["OAuth 2.0", "OAuth client", "Resource server", "RFC 7662", "RFC 6750"],
     "license": "MIT",
-    "version": "0.1",
+    "version": "0.2",
     "authors": [
         {
             "name": "pm",
@@ -17,6 +18,20 @@
     "autoload": {
         "psr-4": {
             "Codewiser\\ResourceServer\\": "src"
+        }
+    },
+    "require-dev": {
+        "orchestra/testbench": "^6.3"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Codewiser\\ResourceServer\\Providers\\ResourceServerServiceProvider"
+            ],
+            "aliases": {
+                "ResourceServer": "Codewiser\\ResourceServer\\Facades\\ResourceServer",
+                "OAuthClient": "Codewiser\\ResourceServer\\Facades\\OAuthClient"
+            }
         }
     }
 }

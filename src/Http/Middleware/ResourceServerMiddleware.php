@@ -20,7 +20,7 @@ class ResourceServerMiddleware
      */
     public function handle(Request $request, Closure $next, $scope = '')
     {
-        $info = ResourceServer::validate($request);
+        $info = ResourceServer::validateRequest($request);
         if ($scope) {
             $info->validateScope($scope);
         }

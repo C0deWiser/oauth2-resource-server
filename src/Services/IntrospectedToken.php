@@ -63,6 +63,21 @@ class IntrospectedToken
         }
     }
 
+    public function toArray()
+    {
+        $data = [
+            'active' => $this->active
+        ];
+
+        if ($this->active) {
+            foreach (['scope', 'client_id', 'username', 'token_type', 'aud', 'jti', 'sub', 'iss', 'exp', 'iat', 'nbf'] as $item) {
+                $data[$item] = $this->$item;
+            }
+        }
+
+        return $data;
+    }
+
     /**
      * Boolean indicator of whether or not the presented token
      * is currently active
@@ -233,7 +248,7 @@ class IntrospectedToken
     public function validateScope($scope)
     {
         if (!in_array($scope, $this->getScopes())) {
-            throw new InsufficientScopeException();
+            throw new InsufficientScopeException("Scope '{$scope}' required.");
         }
     }
 }

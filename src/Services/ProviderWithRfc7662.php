@@ -4,6 +4,7 @@
 namespace Codewiser\ResourceServer\Services;
 
 
+use Illuminate\Support\Facades\Log;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Provider\GenericProvider;
 use UnexpectedValueException;
@@ -36,6 +37,7 @@ class ProviderWithRfc7662 extends GenericProvider
         $request = $this->getAuthenticatedRequest('POST', $this->urlIntrospectToken, $tokenToAuthorize, $options);
 
         $response = $this->getParsedResponse($request);
+
         if (false === is_array($response)) {
             throw new UnexpectedValueException(
                 'Invalid response received from Authorization Server. Expected JSON.'
