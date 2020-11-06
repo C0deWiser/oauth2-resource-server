@@ -75,6 +75,22 @@ class ResourceServerService extends AbstractService
     }
 
     /**
+     * @param string $token
+     * @return ResourceOwnerInterface|null
+     */
+    protected function getCachedResourceOwner(string $token)
+    {
+        if (Cache::has($token)) {
+            /** @var ResourceOwnerInterface $resourceOwner */
+            $resourceOwner = unserialize(Cache::get($token));
+            if ($resourceOwner instanceof ResourceOwnerInterface) {
+                return $resourceOwner;
+            }
+        }
+        return null;
+    }
+
+    /**
      * @param $scope
      * @param AccessTokenInterface $accessToken
      * @param string $key
@@ -86,6 +102,17 @@ class ResourceServerService extends AbstractService
 
         Cache::put($key, serialize($accessToken), Carbon::createFromTimestamp($accessToken->getExpires()));
         return $accessToken;
+    }
+
+    /**
+     * @param string $token
+     * @param ResourceOwnerInterface $resourceOwner
+     * @return ResourceOwnerInterface
+     */
+    protected function cacheResourceOwner(string $token, ResourceOwnerInterface $resourceOwner)
+    {
+        Cache::put($token, serialize($resourceOwner));
+        return $resourceOwner;
     }
 
     public function forgetAccessToken($scope, $key = 'client_access_token')
@@ -204,6 +231,18 @@ class ResourceServerService extends AbstractService
      */
     public function getTokenOwner(Request $request)
     {
-        return $this->provider->getResourceOwner($this->extractToken($request));
+        $token = $this->extractToken($request);
+
+        if ($owner = $this->getCachedResourceOwner($token)) {
+            return $owner;
+        } else {
+
+            $owner = $this->provider->getResourceOwner(
+                new AccessToken(['access_token' => $token])
+            );
+            $this->cacheResourceOwner($token, $owner);
+
+            return $owner;
+        }
     }
 }
