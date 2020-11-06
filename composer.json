@@ -4,7 +4,7 @@
     "type": "library",
     "keywords": ["OAuth 2.0", "OAuth client", "Resource server", "RFC 7662", "RFC 6750", "Laravel"],
     "license": "MIT",
-    "version": "0.2",
+    "version": "0.3",
     "authors": [
         {
             "name": "pm",

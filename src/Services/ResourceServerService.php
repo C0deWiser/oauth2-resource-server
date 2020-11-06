@@ -13,6 +13,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
+use League\OAuth2\Client\Provider\ResourceOwnerInterface;
+use League\OAuth2\Client\Token\AccessToken;
 use League\OAuth2\Client\Token\AccessTokenInterface;
 
 class ResourceServerService extends AbstractService
@@ -164,11 +166,13 @@ class ResourceServerService extends AbstractService
     }
 
     /**
+     * Extract token from request.
+     *
      * @param Request $request
-     * @return IntrospectedToken|null
-     * @throws BearerTokenException
+     * @return mixed|string|null
+     * @throws InvalidRequestException
      */
-    public function introspect(Request $request)
+    protected function extractToken(Request $request)
     {
         if ($token = $request->bearerToken()) {
 
@@ -178,6 +182,28 @@ class ResourceServerService extends AbstractService
             throw new InvalidRequestException('Missing authorization information. See https://tools.ietf.org/html/rfc6750#section-2');
         }
 
-        return $this->getIntrospectedToken($token);
+        return $token;
+    }
+
+    /**
+     * @param Request $request
+     * @return IntrospectedToken|null
+     * @throws BearerTokenException
+     */
+    public function introspect(Request $request)
+    {
+        return $this->getIntrospectedToken($this->extractToken($request));
+    }
+
+    /**
+     * Get Resource Owner.
+     *
+     * @param Request $request
+     * @return ResourceOwnerInterface
+     * @throws InvalidRequestException
+     */
+    public function getTokenOwner(Request $request)
+    {
+        return $this->provider->getResourceOwner($this->extractToken($request));
     }
 }

@@ -112,6 +112,17 @@ And than protect you route.
 
 ```php
 Route::get('resource', 'ApiController@list')->middleware('scope:read');
+
+class ApiController extends Controller
+{
+  public function list(Request $request)
+  {
+     // Get user profile from OAuth server
+     $owner = ResourceServer::getTokenOwner($request);
+    
+    // Your code here
+  }
+}
 ```
 
 Otherwise you may protect group of routes with middleware 
@@ -131,6 +142,8 @@ class ApiController extends Controller
   }
 }
 ```
+
+
 
 If request were not validated, the throwed exception renders proper response 
 (according to [rfc6750](https://tools.ietf.org/html/rfc6750)).
